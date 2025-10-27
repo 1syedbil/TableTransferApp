@@ -40,7 +40,6 @@ namespace TableTransferApp
 
         private void execTransferBtn_Click(object sender, RoutedEventArgs e)
         {
-            // Basic empty-field validation
             if (string.IsNullOrWhiteSpace(txtSourceConnectionString.Text) ||
                 string.IsNullOrWhiteSpace(txtSourceDatabase.Text) ||
                 string.IsNullOrWhiteSpace(txtSourceTable.Text) ||
@@ -61,29 +60,28 @@ namespace TableTransferApp
                     SourceConnectionString = txtSourceConnectionString.Text.Trim(),
                     SourceDatabase = txtSourceDatabase.Text.Trim(),
                     SourceTable = txtSourceTable.Text.Trim(),
-
                     DestConnectionString = txtDestConnectionString.Text.Trim(),
                     DestDatabase = txtDestDatabase.Text.Trim(),
                     DestTable = txtDestTable.Text.Trim()
                 };
 
-                // This performs: connect/validate -> schema read/compare -> create-if-needed -> single-transaction copy
-                var result = tt.ExecuteTransfer();
+                int rows = tt.ExecuteTransfer();
 
-                ShowInfo($"Success: {result.RowsCopied} rows copied from [{tt.SourceDatabase}].[{tt.SourceTable}] to [{tt.DestDatabase}].[{tt.DestTable}] in a single transaction.");
+                ShowInfo(
+                    $"Success: {rows} rows copied from [{tt.SourceDatabase}].[{tt.SourceTable}] " +
+                    $"to [{tt.DestDatabase}].[{tt.DestTable}] in a single transaction.");
             }
             catch (ArgumentException aex)
             {
-                // User-fixable / validation-type issues
                 ShowError(aex.Message);
             }
             catch (SqlException sqlex)
             {
-                ShowError($"Database error: {sqlex.Message}");
+                ShowError("Database error: " + sqlex.Message);
             }
             catch (Exception ex)
             {
-                ShowError($"Unexpected error: {ex.Message}");
+                ShowError("Unexpected error: " + ex.Message);
             }
         }
     }
