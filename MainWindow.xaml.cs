@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Data;
 using System.Data.SqlClient;
+using System.Windows.Threading;
 
 namespace TableTransferApp
 {
@@ -26,20 +27,35 @@ namespace TableTransferApp
 
         private void ShowError(string message)
         {
-            errMsg.Content = message;
+            errMsg.Text = message;
             errMsg.Foreground = Brushes.Red;
             errMsg.Visibility = Visibility.Visible;
         }
 
         private void ShowInfo(string message)
         {
-            errMsg.Content = message;
+            errMsg.Text = message;
             errMsg.Foreground = Brushes.Green;
             errMsg.Visibility = Visibility.Visible;
         }
 
+        private void ClearMessageNow()
+        {
+            var tb = errMsg as System.Windows.Controls.TextBlock;
+            if (tb != null)
+            {
+                tb.Text = string.Empty;
+            }
+
+            errMsg.Visibility = Visibility.Collapsed;
+
+            Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+        }
+
         private void execTransferBtn_Click(object sender, RoutedEventArgs e)
         {
+            ClearMessageNow();
+
             if (string.IsNullOrWhiteSpace(txtSourceConnectionString.Text) ||
                 string.IsNullOrWhiteSpace(txtSourceDatabase.Text) ||
                 string.IsNullOrWhiteSpace(txtSourceTable.Text) ||

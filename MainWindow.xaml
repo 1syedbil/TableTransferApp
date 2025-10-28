@@ -21,7 +21,8 @@
         <Label Content="Destination Database Name" HorizontalAlignment="Left" Height="25" Margin="330,61,0,0" VerticalAlignment="Top" Width="163" RenderTransformOrigin="0.5,0.5"/>
         <Label Content="Destination Table Name" HorizontalAlignment="Center" Margin="0,129,0,0" VerticalAlignment="Top" Width="142"/>
         <Label Content="Destination Database Connection String" HorizontalAlignment="Left" Margin="330,0,0,0" VerticalAlignment="Center" Width="226"/>
-        <Label x:Name="errMsg" Content="" HorizontalAlignment="Left" Margin="361,322,0,0" VerticalAlignment="Top" Width="415"/>
+
+        <TextBlock x:Name="errMsg" HorizontalAlignment="Left" Margin="380,314,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Height="92" Width="392"/>
 
         <Button x:Name="execTransferBtn" Content="Execute Transfer" HorizontalAlignment="Left" Margin="190,314,0,0" VerticalAlignment="Top" Height="42" Width="150" Click="execTransferBtn_Click"/>
     </Grid>
