@@ -1,4 +1,12 @@
-﻿using System;
+﻿// FILE          : TableTransfer.cs
+// PROJECT       : Advanced SQL - Assignment 3
+// PROGRAMMER    : Bilal Syed
+// FIRST VERSION : 2025-10-27
+// DESCRIPTION   : Core ADO.NET logic to transfer rows between SQL Server tables.
+//                 Validates DB/table existence, mirrors schema if needed, and
+//                 copies data in a single transaction with rollback on failure.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +16,10 @@ using System.Data.SqlClient;
 
 namespace TableTransferApp
 {
+    // NAME    : TableTransfer
+    // PURPOSE : Holds user inputs and executes the end-to-end transfer:
+    //           check databases/tables, read schema, create if needed,
+    //           then bulk copy rows within one transaction.
     internal class TableTransfer
     {
         public string SourceConnectionString { get; set; } = string.Empty;
@@ -18,6 +30,11 @@ namespace TableTransferApp
         public string DestDatabase { get; set; } = string.Empty;
         public string DestTable { get; set; } = string.Empty;
 
+        // METHOD      : ExecuteTransfer()
+        // DESCRIPTION : Performs the transfer workflow: validate inputs, verify
+        //               objects, sync schema if missing, and bulk copy rows atomically.
+        // PARAMETERS  : none (uses instance properties).
+        // RETURNS     : int -> number of rows copied (from source row count).
         public int ExecuteTransfer()
         {
             if (HasAnyEmpty(SourceConnectionString, SourceDatabase, SourceTable,
@@ -92,6 +109,10 @@ namespace TableTransferApp
             }
         }
 
+        // METHOD      : HasAnyEmpty()
+        // DESCRIPTION : Quick check for empty/whitespace strings.
+        // PARAMETERS  : parts -> params array of strings to validate.
+        // RETURNS     : bool -> true if any are empty.
         private static bool HasAnyEmpty(params string[] parts)
         {
             for (int i = 0; i < parts.Length; i++)
@@ -101,6 +122,10 @@ namespace TableTransferApp
             return false;
         }
 
+        // METHOD      : SplitSchemaTable()
+        // DESCRIPTION : Parse "schema.table" or default schema to dbo.
+        // PARAMETERS  : input -> user text; out schema, out table.
+        // RETURNS     : void (outputs schema/table).
         private static void SplitSchemaTable(string input, out string schema, out string table)
         {
             string trimmed = input.Trim().Trim('[', ']');
@@ -117,6 +142,10 @@ namespace TableTransferApp
             }
         }
 
+        // METHOD      : OpenAndEnsureDatabaseExists()
+        // DESCRIPTION : Open connection and verify target database exists on server.
+        // PARAMETERS  : conn -> openable SqlConnection; database -> name; onMissingMessage -> error text.
+        // RETURNS     : void (throws on missing DB).
         private static void OpenAndEnsureDatabaseExists(SqlConnection conn, string database, string onMissingMessage)
         {
             conn.Open();
@@ -132,6 +161,10 @@ namespace TableTransferApp
             }
         }
 
+        // METHOD      : TableExists()
+        // DESCRIPTION : Check whether a schema-qualified table exists.
+        // PARAMETERS  : conn -> open SqlConnection; schema/table -> identifiers.
+        // RETURNS     : bool -> true if exists.
         private static bool TableExists(SqlConnection conn, string schema, string table)
         {
             using (var cmd = new SqlCommand(
@@ -144,6 +177,10 @@ namespace TableTransferApp
             }
         }
 
+        // METHOD      : ReadTableSchemaViaInformationSchema()
+        // DESCRIPTION : Read column metadata (name, type, size/precision/scale, nullability).
+        // PARAMETERS  : conn -> open SqlConnection; schema/table -> identifiers.
+        // RETURNS     : List<ColumnDef> -> ordered column definitions.
         private static List<ColumnDef> ReadTableSchemaViaInformationSchema(SqlConnection conn, string schema, string table)
         {
             var list = new List<ColumnDef>();
@@ -184,6 +221,8 @@ namespace TableTransferApp
             return list;
         }
 
+        // NAME    : ColumnDef
+        // PURPOSE : Simple DTO for column metadata used to compare/build schema.
         private class ColumnDef
         {
             public string Name = "";
@@ -194,6 +233,11 @@ namespace TableTransferApp
             public bool IsNullable;
         }
 
+        // METHOD      : SchemasMatch()
+        // DESCRIPTION : Compare source/destination column sets in order for
+        //               name, data type, length/precision/scale, and nullability.
+        // PARAMETERS  : src/dst -> column definitions.
+        // RETURNS     : bool -> true if equivalent.
         private static bool SchemasMatch(IReadOnlyList<ColumnDef> src, IReadOnlyList<ColumnDef> dst)
         {
             if (src.Count != dst.Count) return false;
@@ -214,6 +258,10 @@ namespace TableTransferApp
             return true;
         }
 
+        // METHOD      : NullableEquals<T>()
+        // DESCRIPTION : Equality check for nullable value types.
+        // PARAMETERS  : x, y -> nullable values of same struct type.
+        // RETURNS     : bool -> true if both null or equal.
         private static bool NullableEquals<T>(Nullable<T> x, Nullable<T> y) where T : struct
         {
             if (x.HasValue != y.HasValue) return false;
@@ -221,6 +269,11 @@ namespace TableTransferApp
             return EqualityComparer<T>.Default.Equals(x.Value, y.Value);
         }
 
+        // METHOD      : BuildCreateTableSql()
+        // DESCRIPTION : Generate a CREATE TABLE statement mirroring columns only
+        //               (no keys/FKs), preserving types and sizes/precision/scale.
+        // PARAMETERS  : schema/table -> destination identifiers; cols -> source columns.
+        // RETURNS     : string -> CREATE TABLE DDL.
         private static string BuildCreateTableSql(string schema, string table, IReadOnlyList<ColumnDef> cols)
         {
             var sb = new StringBuilder();
@@ -238,6 +291,10 @@ namespace TableTransferApp
             return sb.ToString();
         }
 
+        // METHOD      : BuildTypeSpec()
+        // DESCRIPTION : Render SQL Server type specifier with length or precision/scale.
+        // PARAMETERS  : c -> column definition.
+        // RETURNS     : string -> data type fragment (e.g., VARCHAR(50), DECIMAL(18,2)).
         private static string BuildTypeSpec(ColumnDef c)
         {
             string dt = c.DataType.ToLowerInvariant();
@@ -267,11 +324,20 @@ namespace TableTransferApp
             }
         }
 
+        // METHOD      : Bracket()
+        // DESCRIPTION : Bracket an identifier for safe SQL usage.
+        // PARAMETERS  : ident -> name to wrap.
+        // RETURNS     : string -> [name]
         private static string Bracket(string ident)
         {
             return "[" + ident + "]";
         }
 
+        // METHOD      : BulkCopy()
+        // DESCRIPTION : Bulk copy all rows from source to destination under the
+        //               provided transaction; returns the source row count copied.
+        // PARAMETERS  : srcConn/srcSchema/srcTable, dstConn/tx/dstSchema/dstTable.
+        // RETURNS     : int -> number of rows copied.
         private static int BulkCopy(SqlConnection srcConn, string srcSchema, string srcTable,
                                     SqlConnection dstConn, SqlTransaction tx,
                                     string dstSchema, string dstTable)

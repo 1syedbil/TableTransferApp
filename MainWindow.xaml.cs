@@ -1,4 +1,11 @@
-﻿using System;
+﻿// FILE          : MainWindow.xaml.cs
+// PROJECT       : Advanced SQL - Assignment 3
+// PROGRAMMER    : Bilal Syed
+// FIRST VERSION : 2025-10-27
+// DESCRIPTION   : WPF UI for the table transfer tool. Validates inputs, clears/shows
+//                 status messages, triggers the transfer, and surfaces errors concisely.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,6 +32,10 @@ namespace TableTransferApp
             InitializeComponent();
         }
 
+        // METHOD      : ShowError()
+        // DESCRIPTION : Display a red error message and make it visible.
+        // PARAMETERS  : message -> text to show to the user.
+        // RETURNS     : void
         private void ShowError(string message)
         {
             errMsg.Text = message;
@@ -32,6 +43,10 @@ namespace TableTransferApp
             errMsg.Visibility = Visibility.Visible;
         }
 
+        // METHOD      : ShowInfo()
+        // DESCRIPTION : Display a green success/info message and make it visible.
+        // PARAMETERS  : message -> text to show to the user.
+        // RETURNS     : void
         private void ShowInfo(string message)
         {
             errMsg.Text = message;
@@ -39,6 +54,11 @@ namespace TableTransferApp
             errMsg.Visibility = Visibility.Visible;
         }
 
+        // METHOD      : ClearMessageNow()
+        // DESCRIPTION : Clear any prior message and collapse the status area, forcing
+        //              a UI render so old text disappears before new work begins.
+        // PARAMETERS  : none
+        // RETURNS     : void
         private void ClearMessageNow()
         {
             var tb = errMsg as System.Windows.Controls.TextBlock;
@@ -52,6 +72,11 @@ namespace TableTransferApp
             Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
         }
 
+        // METHOD      : execTransferBtn_Click()
+        // DESCRIPTION : Orchestrates the flow: clear UI, validate inputs, configure a
+        //               TableTransfer, execute the transfer, and show result or errors.
+        // PARAMETERS  : sender -> event source; e -> event args.
+        // RETURNS     : void
         private void execTransferBtn_Click(object sender, RoutedEventArgs e)
         {
             ClearMessageNow();
